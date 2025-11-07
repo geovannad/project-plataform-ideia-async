@@ -1,32 +1,37 @@
-const express = require('express');
-const exphbs = require('express-handlebars');
-const path = require('path');
+const express = require("express");
+const exphbs = require("express-handlebars");
+const path = require("path");
 
 // Importando conexão e modelos
-const conn = require('./db/conn');
-const User = require('./models/User');
-const Address = require('./models/Address');
+const conn = require("./db/conn");
+const User = require("./models/User");
+const Address = require("./models/Address");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Configuração do Handlebars
-app.engine('handlebars', exphbs.engine({
-  defaultLayout: 'main',
-  runtimeOptions: {
-    allowProtoPropertiesByDefault: true,
-    allowProtoMethodsByDefault: true,
-  },
-}));
-app.set('view engine', 'handlebars');
-app.set('views', path.join(__dirname, 'views'));
+app.engine(
+  "handlebars",
+  exphbs.engine({
+    defaultLayout: "main",
+    runtimeOptions: {
+      allowProtoPropertiesByDefault: true,
+      allowProtoMethodsByDefault: true,
+    },
+  })
+);
+app.set("view engine", "handlebars");
+app.set("views", path.join(__dirname, "views"));
 
 // Middleware para parsing de dados
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
 // Servir arquivos estáticos
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, "public")));
+// Servir pasta `assets` com imagens e outros arquivos que estão na raiz
+app.use("/assets", express.static(path.join(__dirname, "assets")));
 
 // Middleware de log das requisições
 app.use((req, res, next) => {
@@ -39,20 +44,20 @@ app.use((req, res, next) => {
 // ===============================
 
 // Página inicial - Lista todos os ideia
-app.get('/', async (req, res) => {
+app.get("/", async (req, res) => {
   try {
     const users = await User.findAll({
-      order: [['createdAt', 'DESC']], // Mais recentes primeiro
-      raw: true
+      order: [["createdAt", "DESC"]], // Mais recentes primeiro
+      raw: true,
     });
-  
+
     console.log(`Encontrados ${users.length} ideias `);
-    res.render('home', { users });
+    res.render("home", { users });
   } catch (error) {
-    console.error('Erro ao buscar ideias:', error);
-    res.render('home', { 
-      users: [], 
-      error: 'Erro ao carregar ideias' 
+    console.error("Erro ao buscar ideias:", error);
+    res.render("home", {
+      users: [],
+      error: "Erro ao carregar ideias",
     });
   }
 });
@@ -62,102 +67,106 @@ app.get('/', async (req, res) => {
 // ===============================
 
 // Página de cadastro de ideia
-app.get('/users/create', (req, res) => {
-  res.render('adduser');
+app.get("/users/create", (req, res) => {
+  res.render("adduser");
 });
 
 // Criar novo ideia
-app.post('/users/create', async (req, res) => {
+app.post("/users/create", async (req, res) => {
   try {
     const { name, occupation, newsletter } = req.body;
-  
+
     // Validação básica
     if (!name || name.trim().length < 2) {
-      return res.render('adduser', { 
-        error: 'Título deve ter pelo menos 2 caracteres',
-        formData: { name, occupation, newsletter }
+      return res.render("adduser", {
+        error: "Título deve ter pelo menos 2 caracteres",
+        formData: { name, occupation, newsletter },
       });
     }
 
     const userData = {
       name: name.trim(),
       occupation: occupation ? occupation.trim() : null,
-      newsletter: newsletter === 'on'
+      newsletter: newsletter === "on",
     };
 
     const user = await User.create(userData);
-    console.log('Ideia criada:', user.toJSON());
-  
-    res.redirect('/');
+    console.log("Ideia criada:", user.toJSON());
+
+    res.redirect("/");
   } catch (error) {
-    console.error('Erro ao criar ideia:', error);
-    res.render('adduser', { 
-      error: 'Erro ao criar ideia: ' + error.message,
-      formData: req.body
+    console.error("Erro ao criar ideia:", error);
+    res.render("adduser", {
+      error: "Erro ao criar ideia: " + error.message,
+      formData: req.body,
     });
   }
 });
 
 // Ver detalhes de um ideia
-app.get('/users/:id', async (req, res) => {
+app.get("/users/:id", async (req, res) => {
   try {
     const { id } = req.params;
-  
+
     const user = await User.findByPk(id, {
-      include: [{
-        model: Address,
-        as: 'addresses'
-      }]
+      include: [
+        {
+          model: Address,
+          as: "addresses",
+        },
+      ],
     });
 
     if (!user) {
-      return res.render('userview', { 
-        error: 'Ideia não encontrada' 
+      return res.render("userview", {
+        error: "Ideia não encontrada",
       });
     }
 
-    res.render('userview', { 
-      user: user.toJSON()
+    res.render("userview", {
+      user: user.toJSON(),
     });
   } catch (error) {
-    console.error('Erro ao buscar ideia:', error);
-    res.render('userview', { 
-      error: 'Erro ao carregar ideia' 
+    console.error("Erro ao buscar ideia:", error);
+    res.render("userview", {
+      error: "Erro ao carregar ideia",
     });
   }
 });
 
 // Página de edição de ideia
-app.get('/users/edit/:id', async (req, res) => {
+app.get("/users/edit/:id", async (req, res) => {
   try {
     const { id } = req.params;
-  
+
     const user = await User.findByPk(id, {
-      include: [{
-        model: Address,
-        as: 'addresses',
-        order: [['createdAt', 'DESC']]
-      }]
+      include: [
+        {
+          model: Address,
+          as: "addresses",
+          order: [["createdAt", "DESC"]],
+        },
+      ],
     });
 
     if (!user) {
-      return res.redirect('/');
+      return res.redirect("/");
     }
 
-    res.render('useredit', { 
-      user: user.toJSON()
+    res.render("useredit", {
+      user: user.toJSON(),
     });
   } catch (error) {
-    console.error('Erro ao buscar ideia para edição:', error);
-    res.redirect('/');
+    console.error("Erro ao buscar ideia para edição:", error);
+    res.redirect("/");
   }
 });
 
 // Atualizar ideia
-app.post('/users/update', async (req, res) => {
+app.post("/users/update", async (req, res) => {
   try {
     const { id, name, occupation, newsletter } = req.body;
-  
+
     // Validação
     if (!name || name.trim().length < 2) {
       return res.redirect(`/users/edit/${id}`);
@@ -166,51 +175,51 @@ app.post('/users/update', async (req, res) => {
     const updateData = {
       name: name.trim(),
       occupation: occupation ? occupation.trim() : null,
-      newsletter: newsletter === 'on'
+      newsletter: newsletter === "on",
     };
 
     const [updatedRows] = await User.update(updateData, {
-      where: { id }
+      where: { id },
     });
 
     if (updatedRows === 0) {
-      console.log('Nenhum ideia foi atualizado');
+      console.log("Nenhum ideia foi atualizado");
     } else {
       console.log(`Ideia ${id} atualizada com sucesso`);
     }
 
-    res.redirect('/');
+    res.redirect("/");
   } catch (error) {
-    console.error('Erro ao atualizar ideia:', error);
-    res.redirect(`/users/edit/${req.body.id || ''}`);
+    console.error("Erro ao atualizar ideia:", error);
+    res.redirect(`/users/edit/${req.body.id || ""}`);
   }
 });
 
 // Excluir ideia
-app.post('/users/delete/:id', async (req, res) => {
+app.post("/users/delete/:id", async (req, res) => {
   try {
     const { id } = req.params;
-  
+
     // Primeiro, deletar todos os endereços do ideia
     await Address.destroy({
-      where: { userId: id }
+      where: { userId: id },
     });
-  
+
     // Depois, deletar o ideia
     const deletedRows = await User.destroy({
-      where: { id }
+      where: { id },
     });
 
     if (deletedRows > 0) {
       console.log(`ideia ${id} e seus endereços foram excluídos`);
     } else {
-      console.log('Nenhum ideia foi excluído');
+      console.log("Nenhum ideia foi excluído");
     }
 
-    res.redirect('/');
+    res.redirect("/");
   } catch (error) {
-    console.error('Erro ao excluir ideia:', error);
-    res.redirect('/');
+    console.error("Erro ao excluir ideia:", error);
+    res.redirect("/");
   }
 });
 
@@ -219,15 +228,15 @@ app.post('/users/delete/:id', async (req, res) => {
 // ===============================
 
 // Criar novo endereço
-app.post('/address/create', async (req, res) => {
+app.post("/address/create", async (req, res) => {
   try {
     const { userId, street, number, city } = req.body;
-  
+
     // Validação
     if (!street || street.trim().length < 5) {
       return res.redirect(`/users/edit/${userId}`);
     }
-  
+
     if (!city || city.trim().length < 2) {
       return res.redirect(`/users/edit/${userId}`);
     }
@@ -236,36 +245,36 @@ app.post('/address/create', async (req, res) => {
       street: street.trim(),
       number: number ? number.trim() : null,
       city: city.trim(),
-      userId
+      userId,
     };
 
     const address = await Address.create(addressData);
-    console.log('Endereço criado:', address.toJSON());
-  
+    console.log("Endereço criado:", address.toJSON());
+
     res.redirect(`/users/edit/${userId}`);
   } catch (error) {
-    console.error('Erro ao criar endereço:', error);
-    res.redirect(`/users/edit/${req.body.userId || ''}`);
+    console.error("Erro ao criar endereço:", error);
+    res.redirect(`/users/edit/${req.body.userId || ""}`);
   }
 });
 
 // Excluir endereço
-app.post('/address/delete', async (req, res) => {
+app.post("/address/delete", async (req, res) => {
   try {
     const { id, userId } = req.body;
-  
+
     const deletedRows = await Address.destroy({
-      where: { id }
+      where: { id },
     });
 
     if (deletedRows > 0) {
       console.log(`Endereço ${id} excluído`);
     }
 
-    res.redirect(userId ? `/users/edit/${userId}` : '/');
+    res.redirect(userId ? `/users/edit/${userId}` : "/");
   } catch (error) {
-    console.error('Erro ao excluir endereço:', error);
-    res.redirect('/');
+    console.error("Erro ao excluir endereço:", error);
+    res.redirect("/");
   }
 });
 
@@ -273,9 +282,9 @@ app.post('/address/delete', async (req, res) => {
 // TRATAMENTO DE ERROS 404
 // ===============================
 app.use((req, res) => {
-  res.status(404).render('home', { 
+  res.status(404).render("home", {
     users: [],
-    error: 'Página não encontrada' 
+    error: "Página não encontrada",
   });
 });
 
@@ -286,15 +295,15 @@ async function startServer() {
   try {
     // Sincronizar modelos com o banco de dados
     await conn.sync();
-    console.log('✅ Modelos sincronizados com o banco de dados!');
-  
+    console.log("✅ Modelos sincronizados com o banco de dados!");
+
     // Iniciar servidor
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
-      console.log('💡 Pressione Ctrl+C para parar o servidor');
+      console.log("💡 Pressione Ctrl+C para parar o servidor");
     });
   } catch (error) {
-    console.error('❌ Erro ao iniciar servidor:', error);
+    console.error("❌ Erro ao iniciar servidor:", error);
     process.exit(1);
   }
 }

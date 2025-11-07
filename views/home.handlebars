@@ -1,34 +1,41 @@
 {{#if users}}
-<div class="users-grid">
-  {{#each users}}
-    <div class="user-card">
-      <div class="user-info">
-        <h3>{{this.name}}</h3>
-        <p class="occupation">💼 {{this.occupation}}</p>
-        <p class="newsletter">
-          {{#if this.newsletter}}
-            📧 Recebe newsletter
-          {{else}}
-            📭 Não recebe newsletter
-          {{/if}}
-        </p>
+  <div class="users-grid">
+    {{#each users}}
+      <div class="user-card">
+        <div class="user-info">
+          <div class="title">
+            <h3>{{this.name}}</h3>
+            <p class="category">💼 {{this.occupation}}</p>
+          </div>
+          <p class="discription">{{this.newsletter}}
+          </p>
+        </div>
+        <div class="user-actions">
+          <form action="/idea/agree/{{this.id}}" method="POST">
+            <img
+              onclick="return confirm('Tem certeza que deseja votar que SIM?')"
+              src="/assets/like.png"
+              alt="like"
+              class="like-icon"
+            />
+
+          </form>
+          <form action="/idea/desagree/{{this.id}}" method="POST">
+            <img
+              onclick="return confirm('Tem certeza que deseja votar que NÃO?')"
+              src="/assets/dislike.png"
+              alt="dislike"
+              class="dislike-icon"
+            />
+          </form>
+        </div>
       </div>
-      <div class="user-actions">
-        <a href="/users/{{this.id}}" class="btn btn-info">Ver mais</a>
-        <a href="/users/edit/{{this.id}}" class="btn btn-warning">SIM</a>
-        <form action="/users/delete/{{this.id}}" method="POST" class="delete-form">
-          <button type="submit" class="btn btn-danger" onclick="return confirm('Tem certeza que deseja excluir este usuário?')">
-            NÃO
-          </button>
-        </form>
-      </div>
-    </div>
-  {{/each}}
-</div>
+    {{/each}}
+  </div>
 {{else}}
-<div class="empty-state">
-  <h3>Nenhuma ideia cadastrada ainda</h3>
-  <p>Que tal adicionar a primeira ideia?</p>
-  <a href="/users/create" class="btn btn-primary">Criar Primeira Ideia</a>
-</div>
+  <div class="empty-state">
+    <h3>Nenhuma ideia cadastrada ainda</h3>
+    <p>Que tal adicionar a primeira ideia?</p>
+    <a href="/users/create" class="btn-primary">Criar Primeira Ideia</a>
+  </div>
 {{/if}}
