@@ -1,50 +1,25 @@
-const { DataTypes } = require('sequelize');
-const db = require('../db/conn');
 
-const User = db.define('User', {
-  id: {
-    type: DataTypes.INTEGER,
-    primaryKey: true,
-    autoIncrement: true,
-  },
-  name: {
-    type: DataTypes.STRING(100),
-    allowNull: false,
-    validate: {
-      notEmpty: {
-        msg: 'Título não pode estar vazio'
-      },
-      len: {
-        args: [2, 100],
-        msg: 'Título deve ter entre 2 e 100 caracteres'
-      }
-    }
-  },
-  occupation: {
-    type: DataTypes.STRING(150),
-    allowNull: true,
-    validate: {
-      notEmpty: {
-        msg: 'Descrição não pode estar vazia'
-      },
-      len: {
-        args: [2, 150],
-        msg: 'Descrição deve ter no máximo 150 caracteres'
-      }
-    }
-  },
-  newsletter: {
-    type: DataTypes.BOOLEAN,
-    defaultValue: false,
-    allowNull: false,
-  },
-}, {
-  tableName: 'users',
-  indexes: [
-    {
-      fields: ['name'] // Índice para busca por nome
-    }
-  ]
-});
+module.exports = (sequelize, DataTypes) => {
+  const User = sequelize.define("User", {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    name: DataTypes.STRING(100),
+    cpf: DataTypes.STRING(12),
+    email: DataTypes.STRING(100),
+    created_date: DataTypes.DATE,
+    password: DataTypes.STRING(50)
+  }, {
+    tableName: '"User"', 
+    timestamps: false
+  });
 
-module.exports = User;
+  User.associate = (models) => {
+    User.hasMany(models.Idea, { foreignKey: 'id_user' });
+    User.hasMany(models.Response, { foreignKey: 'id_user' });
+  };
+
+  return User;
+}
