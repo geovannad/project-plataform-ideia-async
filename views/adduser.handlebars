@@ -1,0 +1,102 @@
+<div class="page-header">
+  <h1>➕ Cadastrar Novo Usuário</h1>
+  <a href="/" class="btn btn-info">⬅️ Voltar para Lista</a>
+</div>
+
+{{#if error}}
+<div class="alert alert-error">
+  ⚠️ {{error}}
+</div>
+{{/if}}
+
+<form action="/users/create" method="POST" class="form">
+  <div class="form-group">
+    <label for="name">Título*</label>
+    <input 
+      type="text" 
+      id="name"
+      name="name" 
+      class="form-control"
+      placeholder="Digite o título da sua ideia"
+      value="{{formData.name}}"
+      required
+      minlength="2"
+      maxlength="100"
+    />
+    <small class="form-text">Mínimo de 2 caracteres</small>
+  </div>
+
+  <div class="form-group">
+    <label for="occupation">Descrição*</label>
+    <input 
+      type="text" 
+      id="occupation"
+      name="occupation" 
+      class="form-control"
+      placeholder="Digite a descrição da sua ideia"
+      value="{{formData.occupation}}"
+      required
+      maxlength="150"
+    />
+  </div>
+
+  {{!-- <div class="form-group">
+    <label for="userType">Categoria da ideia</label>
+    <select 
+      id="userType" 
+      name="userType" 
+      class="form-control"
+      required
+    >
+      <option value="">Selecione...</option>
+      <option value="admin" {{#if (formData.userType "admin")}}selected{{/if}}>Administrador</option>
+      <option value="editor" {{#if (formData.userType "editor")}}selected{{/if}}>Editor</option>
+      <option value="viewer" {{#if (formData.userType "viewer")}}selected{{/if}}>Visualizador</option>
+    </select>
+    <small class="form-text">Escolha o tipo de acesso do usuário</small>
+  </div> --}}
+
+  <div class="form-actions">
+    <a href="/" class="btn btn-secondary">❌ Cancelar</a>
+    <button type="submit" class="btn btn-primary">Cadastrar Ideia</button>
+  </div>
+</form>
+
+<style>
+.alert {
+  padding: 1rem;
+  border-radius: 5px;
+  margin-bottom: 1rem;
+}
+
+.alert-error {
+  background-color: #f8d7da;
+  border: 1px solid #f5c6cb;
+  color: #721c24;
+}
+
+.form-text {
+  font-size: 0.875rem;
+  color: #6c757d;
+  margin-top: 0.25rem;
+  display: block;
+}
+
+.form-actions {
+  display: flex;
+  gap: 1rem;
+  margin-top: 2rem;
+  justify-content: center;
+}
+
+.btn-secondary {
+  background-color: #6c757d;
+  color: white;
+}
+
+@media (max-width: 600px) {
+  .form-actions {
+    flex-direction: column;
+  }
+}
+</style>
