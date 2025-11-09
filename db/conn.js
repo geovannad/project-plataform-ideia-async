@@ -7,21 +7,15 @@ const sequelize = new Sequelize(
   {
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
-    ssl: process.env.DB_SSL === "true",
+    dialectOptions: {
+      ssl: {
+        rejectUnauthorized: true,
+        ca: process.env.DB_SSL_CA,
+      },
+    },
     dialect: "postgres",
     logging: false,
   }
 );
-
-async function testConnection() {
-  try {
-    await sequelize.authenticate();
-    console.log("Conexão estabelecida com sucesso!");
-  } catch (error) {
-    console.error("Erro ao conectar com o banco:", error);
-  }
-}
-
-testConnection();
 
 module.exports = sequelize;
