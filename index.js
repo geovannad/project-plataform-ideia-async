@@ -1,12 +1,8 @@
+require("dotenv").config();
 
-const categoryRoutes = require('./routes/v1/categoryRoutes');
-const userRoutes = require('./routes/v1/userRoutes');
-const ideaRoutes = require('./routes/v1/ideaRoutes');
-
-
-app.use('/api/v1/category', categoryRoutes);
-app.use('/api/v1/user', userRoutes);
-app.use('/api/v1/idea', ideaRoutes);
+const categoryRoutes = require("./routes/CategoryRoutes");
+const userRoutes = require("./routes/UserRoutes");
+const ideaRoutes = require("./routes/IdeaRoutes");
 
 const express = require("express");
 const exphbs = require("express-handlebars");
@@ -19,6 +15,10 @@ const Address = require("./models/Address");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use("/api/v1/category", categoryRoutes);
+app.use("/api/v1/user", userRoutes);
+app.use("/api/v1/idea", ideaRoutes);
 
 // Configuração do Handlebars
 app.engine(
@@ -319,4 +319,3 @@ async function startServer() {
 }
 
 startServer();
-
