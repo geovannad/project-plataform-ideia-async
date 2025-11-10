@@ -14,11 +14,18 @@ module.exports = (sequelize, DataTypes) => {
       cpf: {
         type: DataTypes.STRING(12),
         allowNull: true,
+        unique: true,
+        validate: {
+          len: {
+            args: [11, 11],
+            msg: "O CPF deve ter 11 dígitos.",
+          },
+        },
       },
       email: {
         type: DataTypes.STRING(100),
         allowNull: false,
-        unique: true, // 👈 garante que não existam dois emails iguais
+        unique: true, 
         validate: {
           isEmail: {
             msg: "Email inválido",
@@ -27,7 +34,7 @@ module.exports = (sequelize, DataTypes) => {
       },
       password: {
         type: DataTypes.STRING(255),
-        allowNull: false, // 👈 obrigatório para login
+        allowNull: false, 
       },
       created_date: {
         type: DataTypes.DATE,

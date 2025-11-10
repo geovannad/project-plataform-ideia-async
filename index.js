@@ -10,7 +10,9 @@ const path = require("path");
 
 // Importando conexão e modelos
 const conn = require("./db/conn");
-const User = require("./models/User");
+const { DataTypes } = require("sequelize");
+const UserModel = require("./models/User");
+const User = UserModel(conn, DataTypes);
 const Address = require("./models/Address");
 
 const app = express();
@@ -68,12 +70,6 @@ app.use(express.static(path.join(__dirname, "public")));
 // Servir pasta `assets` com imagens e outros arquivos que estão na raiz
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 
-// Middleware de log das requisições
-app.use((req, res, next) => {
-  console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`);
-  next();
-});
-
 // ===============================
 // ROTAS PRINCIPAIS
 // ===============================
@@ -86,23 +82,26 @@ app.get("/login", (req, res) => {
 // Registro de novo usuário
 app.post("/register", async (req, res) => {
   try {
-    const { name, email, password } = req.body;
+    const { name, email, password, cpf } = req.body;
 
-    if (!name || !email || !password) {
-      return res.render("login", { error: "Preencha todos os campos" });
+    // validações simples
+    if (!name || !email || !password || !cpf) {
+      return res.render("register", { error: "Preencha todos os campos!" });
     }
 
     const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
-      return res.render("login", { error: "Email já cadastrado" });
+      return res.render("register", { error: "Esse email já está cadastrado!" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // inclui o cpf aqui 👇
     const newUser = await User.create({
       name,
       email,
       password: hashedPassword,
+      cpf,
     });
 
     req.session.user = {
@@ -114,23 +113,28 @@ app.post("/register", async (req, res) => {
     res.redirect("/");
   } catch (error) {
     console.error("Erro ao registrar:", error);
-    res.render("login", { error: "Erro ao registrar usuário" });
+    res.render("register", { error: "Erro ao registrar usuário." });
   }
 });
+
 
 // Login
 app.post("/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    if (!email || !password) {
+      return res.send("<script>alert('Preencha todos os campos.'); window.history.back();</script>");
+    }
+
     const user = await User.findOne({ where: { email } });
     if (!user) {
-      return res.render("login", { error: "Usuário não encontrado" });
+      return res.send("<script>alert('Usuário não encontrado.'); window.history.back();</script>");
     }
 
     const passwordMatch = await bcrypt.compare(password, user.password);
     if (!passwordMatch) {
-      return res.render("login", { error: "Senha incorreta" });
+      return res.send("<script>alert('Senha incorreta.'); window.history.back();</script>");
     }
 
     req.session.user = {
@@ -139,19 +143,24 @@ app.post("/login", async (req, res) => {
       email: user.email,
     };
 
+    console.log("Usuário logado:", user.email);
     res.redirect("/");
   } catch (error) {
     console.error("Erro no login:", error);
-    res.render("login", { error: "Erro ao fazer login" });
+    res.send("<script>alert('Erro ao fazer login. Tente novamente.'); window.history.back();</script>");
   }
 });
+
+
 
 // Logout
 app.get("/logout", (req, res) => {
   req.session.destroy(() => {
+    res.clearCookie("connect.sid");
     res.redirect("/login");
   });
 });
+
 
 // Página inicial - Lista todos os ideia
 app.get("/", checkAuth, async (req, res) => {
