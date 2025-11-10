@@ -20,6 +20,14 @@ app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/idea", ideaRoutes);
 
+function checkAuth(req, res, next) {
+  if (!req.session.user) {
+    return res.redirect("/login");
+  }
+  next();
+}
+const bcrypt = require("bcryptjs");
+
 // Configuração do Handlebars
 app.engine(
   "handlebars",
@@ -38,6 +46,23 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
+// Sessão (para login)
+const session = require("express-session");
+
+app.use(
+  session({
+    secret: process.env.SESSION_SECRET || "chave-super-secreta",
+    resave: false,
+    saveUninitialized: false,
+  })
+);
+
+// Middleware para disponibilizar o usuário logado nas views
+app.use((req, res, next) => {
+  res.locals.loggedUser = req.session.user || null;
+  next();
+});
+
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, "public")));
 // Servir pasta `assets` com imagens e outros arquivos que estão na raiz
@@ -53,8 +78,83 @@ app.use((req, res, next) => {
 // ROTAS PRINCIPAIS
 // ===============================
 
+// Página inicial de login
+app.get("/login", (req, res) => {
+ res.render("login", { layout: "authLayout" });
+});
+
+// Registro de novo usuário
+app.post("/register", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.render("login", { error: "Preencha todos os campos" });
+    }
+
+    const existingUser = await User.findOne({ where: { email } });
+    if (existingUser) {
+      return res.render("login", { error: "Email já cadastrado" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+    });
+
+    req.session.user = {
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+    };
+
+    res.redirect("/");
+  } catch (error) {
+    console.error("Erro ao registrar:", error);
+    res.render("login", { error: "Erro ao registrar usuário" });
+  }
+});
+
+// Login
+app.post("/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ where: { email } });
+    if (!user) {
+      return res.render("login", { error: "Usuário não encontrado" });
+    }
+
+    const passwordMatch = await bcrypt.compare(password, user.password);
+    if (!passwordMatch) {
+      return res.render("login", { error: "Senha incorreta" });
+    }
+
+    req.session.user = {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+    };
+
+    res.redirect("/");
+  } catch (error) {
+    console.error("Erro no login:", error);
+    res.render("login", { error: "Erro ao fazer login" });
+  }
+});
+
+// Logout
+app.get("/logout", (req, res) => {
+  req.session.destroy(() => {
+    res.redirect("/login");
+  });
+});
+
 // Página inicial - Lista todos os ideia
-app.get("/", async (req, res) => {
+app.get("/", checkAuth, async (req, res) => {
   try {
     const users = await User.findAll({
       order: [["createdAt", "DESC"]], // Mais recentes primeiro
@@ -77,12 +177,12 @@ app.get("/", async (req, res) => {
 // ===============================
 
 // Página de cadastro de ideia
-app.get("/users/create", (req, res) => {
+app.get("/users/create", checkAuth, (req, res) => {
   res.render("adduser");
 });
 
 // Criar novo ideia
-app.post("/users/create", async (req, res) => {
+app.post("/users/create", checkAuth, async (req, res) => {
   try {
     const { name, occupation, newsletter } = req.body;
 
@@ -114,7 +214,7 @@ app.post("/users/create", async (req, res) => {
 });
 
 // Ver detalhes de um ideia
-app.get("/users/:id", async (req, res) => {
+app.get("/users/:id", checkAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -145,7 +245,7 @@ app.get("/users/:id", async (req, res) => {
 });
 
 // Página de edição de ideia
-app.get("/users/edit/:id", async (req, res) => {
+app.get("/users/edit/:id", checkAuth, async (req, res) => {
   try {
     const { id } = req.params;
 
@@ -173,7 +273,7 @@ app.get("/users/edit/:id", async (req, res) => {
 });
 
 // Atualizar ideia
-app.post("/users/update", async (req, res) => {
+app.post("/users/update", checkAuth, async (req, res) => {
   try {
     const { id, name, occupation, newsletter } = req.body;
 
@@ -206,7 +306,7 @@ app.post("/users/update", async (req, res) => {
 });
 
 // Excluir ideia
-app.post("/users/delete/:id", async (req, res) => {
+app.post("/users/delete/:id", checkAuth, async (req, res) => {
   try {
     const { id } = req.params;
 

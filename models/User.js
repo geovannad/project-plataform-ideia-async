@@ -7,11 +7,32 @@ module.exports = (sequelize, DataTypes) => {
         primaryKey: true,
         autoIncrement: true,
       },
-      name: DataTypes.STRING(100),
-      cpf: DataTypes.STRING(12),
-      email: DataTypes.STRING(100),
-      created_date: DataTypes.DATE,
-      password: DataTypes.STRING(50),
+      name: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+      },
+      cpf: {
+        type: DataTypes.STRING(12),
+        allowNull: true,
+      },
+      email: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        unique: true, // 👈 garante que não existam dois emails iguais
+        validate: {
+          isEmail: {
+            msg: "Email inválido",
+          },
+        },
+      },
+      password: {
+        type: DataTypes.STRING(255),
+        allowNull: false, // 👈 obrigatório para login
+      },
+      created_date: {
+        type: DataTypes.DATE,
+        defaultValue: DataTypes.NOW,
+      },
     },
     {
       tableName: '"User"',
@@ -19,6 +40,7 @@ module.exports = (sequelize, DataTypes) => {
     }
   );
 
+  // Associações
   User.associate = (models) => {
     User.hasMany(models.Idea, { foreignKey: "id_user" });
     User.hasMany(models.Response, { foreignKey: "id_user" });

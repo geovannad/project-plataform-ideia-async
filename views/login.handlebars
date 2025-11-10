@@ -1,0 +1,16 @@
+<div style="text-align:center; margin-top:2rem;">
+  <button class="btn btn-primary" onclick="openModal('loginModal')">Login</button>
+  <p>Não possui cadastro?</p>
+  <button class="btn btn-info" onclick="openModal('registerModal')">Cadastrar</button>
+</div>
+
+{{#if error}}
+  <p style="color:red; text-align:center;">{{error}}</p>
+{{/if}}
+
+{{#if success}}
+  <p style="color:green; text-align:center;">{{success}}</p>
+{{/if}}
+
+{{> loginModal}}
+{{> registerModal}}

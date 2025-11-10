@@ -1,0 +1,21 @@
+<div id="registerModal" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('registerModal')">&times;</span>
+    <h2>Cadastrar</h2>
+    <form method="POST" action="/auth/register">
+        <label>Nome:</label>
+        <input type="text" name="name" class="form-control" required>
+
+        <label>Email:</label>
+        <input type="email" name="email" class="form-control" required>
+    
+        <label>CPF:</label>
+        <input type="text" name="cpf" class="form-control" required>
+
+        <label>Senha:</label>
+        <input type="password" name="password" class="form-control" required>
+
+      <button type="submit" class="btn btn-info">Cadastrar</button>
+    </form>
+  </div>
+</div>
