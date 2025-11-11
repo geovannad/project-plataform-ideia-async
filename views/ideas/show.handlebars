@@ -1,0 +1,137 @@
+<div class="row mb-4">
+  <div class="col-md-8">
+    <a href="/" class="btn btn-outline-secondary mb-3">
+      <i class="bi bi-arrow-left"></i> Voltar
+    </a>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card shadow-sm mb-4">
+      <div class="card-body p-5">
+        <div class="d-flex justify-content-between align-items-start mb-4">
+          <div>
+            <h1 class="mb-2">{{idea.title}}</h1>
+            <div class="mb-3">
+              {{#if idea.Category}}
+                <span class="badge bg-info me-2">{{idea.Category.name}}</span>
+              {{/if}}
+              <small class="text-muted">
+                <i class="bi bi-calendar"></i> {{formatDate idea.created_date}}
+              </small>
+            </div>
+          </div>
+          <div class="text-end">
+            <div class="h2 text-primary mb-1">
+              <i class="bi bi-hand-thumbs-up-fill"></i> {{voteCount}}
+            </div>
+            <small class="text-muted">votos</small>
+          </div>
+        </div>
+
+        <div class="alert alert-light border mb-4">
+          <div class="d-flex align-items-center">
+            <div>
+              <strong>{{idea.User.name}}</strong>
+              <br>
+              <small class="text-muted">{{idea.User.email}}</small>
+            </div>
+          </div>
+        </div>
+
+        <div class="mb-4">
+          <h5 class="mb-3">Descrição</h5>
+          <p class="lead lh-lg">{{idea.description}}</p>
+        </div>
+      </div>
+    </div>
+
+    {{#if loggedUser}}
+      {{#if isAuthor}}
+        <div class="card card-warning mb-4">
+          <div class="card-body">
+            <div class="d-flex gap-2">
+              <a href="/ideas/{{idea.id}}/edit" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar Ideia
+              </a>
+              <form method="POST" action="/ideas/{{idea.id}}/delete" style="display: inline;">
+                <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                <button 
+                  type="submit" 
+                  class="btn btn-danger"
+                  onclick="return confirm('Tem certeza que deseja deletar esta ideia? Esta ação é irreversível.')"
+                >
+                  <i class="bi bi-trash"></i> Deletar Ideia
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+      {{else}}
+        <div class="card mb-4">
+          <div class="card-body text-center py-4">
+            {{#if hasVoted}}
+              <p class="text-success mb-3">
+                <i class="bi bi-check-circle"></i> Você já votou nessa ideia!
+              </p>
+              <form method="POST" action="/ideas/{{idea.id}}/unvote" style="display: inline;">
+                <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                <button type="submit" class="btn btn-lg btn-success">
+                  <i class="bi bi-hand-thumbs-up-fill"></i> Remover Meu Voto
+                </button>
+              </form>
+            {{else}}
+              <p class="mb-3">O que acha dessa ideia? Dê seu voto!</p>
+              <form method="POST" action="/ideas/{{idea.id}}/vote" style="display: inline;">
+                <input type="hidden" name="_csrf" value="{{csrfToken}}">
+                <button type="submit" class="btn btn-lg btn-primary">
+                  <i class="bi bi-hand-thumbs-up"></i> Votar Nessa Ideia
+                </button>
+              </form>
+            {{/if}}
+          </div>
+        </div>
+      {{/if}}
+    {{else}}
+      <div class="card mb-4">
+        <div class="card-body text-center py-4">
+          <p class="mb-3">Faça login para votar nessa ideia</p>
+          <a href="/login" class="btn btn-lg btn-primary">
+            <i class="bi bi-box-arrow-in-right"></i> Fazer Login
+          </a>
+        </div>
+      </div>
+    {{/if}}
+  </div>
+
+  <div class="col-md-4">
+    <div class="card shadow-sm">
+      <div class="card-header bg-primary text-white">
+        <h5 class="mb-0">
+          <i class="bi bi-info-circle"></i> Informações
+        </h5>
+      </div>
+      <div class="card-body">
+        <div class="mb-4">
+          <strong class="d-block mb-1">Autor:</strong>
+          <p class="mb-0">{{idea.User.name}}</p>
+        </div>
+        <div class="mb-4">
+          <strong class="d-block mb-1">Email:</strong>
+          <p class="mb-0 text-break">{{idea.User.email}}</p>
+        </div>
+        <div class="mb-4">
+          <strong class="d-block mb-1">Data de Criação:</strong>
+          <p class="mb-0">{{formatDate idea.created_date}}</p>
+        </div>
+        {{#if idea.Category}}
+          <div>
+            <strong class="d-block mb-1">Categoria:</strong>
+            <p class="mb-0">{{idea.Category.name}}</p>
+          </div>
+        {{/if}}
+      </div>
+    </div>
+  </div>
+</div>

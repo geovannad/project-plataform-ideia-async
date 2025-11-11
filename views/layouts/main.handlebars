@@ -1,25 +1,93 @@
 <!DOCTYPE html>
-<html lang="pt-br">
-  <head>
-    <meta charset="UTF-8" />
-    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Plataforma de Ideias</title>
-    <link rel="stylesheet" href="/css/styles.css" />
-  </head>
-  <body>
-    <nav id="navbar">
-      <div class="nav-brand">
-        <h2>Plataforma de Ideias</h2>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Plataforma de Ideias - Inovação do J&F</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.0/font/bootstrap-icons.css">
+  <link rel="stylesheet" href="/css/styles.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark sticky-top">
+    <div class="container">
+      <a class="navbar-brand fw-bold" href="/">
+        <i class="bi bi-lightbulb"></i> Plataforma de Ideias
+      </a>
+      <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+        <span class="navbar-toggler-icon"></span>
+      </button>
+      <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav ms-auto">
+          {{#if loggedUser}}
+            <li class="nav-item">
+              <a class="nav-link" href="/">
+                <i class="bi bi-house"></i> Home
+              </a>
+            </li>
+            <li class="nav-item d-flex align-items-center">
+              <a class="nav-link" href="/profile">
+                <i class="bi bi-person-circle"></i> {{loggedUser.name}}
+              </a>
+            </li>
+          {{else}}
+            <li class="nav-item">
+              <a class="nav-link" href="/login">
+                <i class="bi bi-box-arrow-in-right"></i> Login
+              </a>
+            </li>
+            <li class="nav-item">
+              <a class="nav-link" href="/register">
+                <i class="bi bi-person-plus"></i> Registrar
+              </a>
+            </li>
+          {{/if}}
+        </ul>
       </div>
-      <ul>
-        <li><a href="/">Lista de Ideias</a></li>
-        <li><a href="/suasIdeias">Suas Ideias</a></li>
-        <li><a href="/logout">Logout</a></li>
-      </ul>
-    </nav>
-    <main class="container">
-      {{{ body }}}
-    </main>
-  </body>
+    </div>
+  </nav>
+
+  <main class="py-4 min-vh-100">
+    <div class="container">
+      {{#if messages.success}}
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+          <i class="bi bi-check-circle"></i>
+          {{#each messages.success}}
+            <span>{{this}}</span>
+          {{/each}}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {{/if}}
+
+      {{#if messages.error}}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-circle"></i>
+          {{#each messages.error}}
+            <span>{{this}}</span>
+          {{/each}}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {{/if}}
+
+      {{#if error}}
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+          <i class="bi bi-exclamation-triangle"></i> {{error}}
+          <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+      {{/if}}
+
+      {{{body}}}
+    </div>
+  </main>
+
+  <footer class="bg-dark text-white mt-5 py-4">
+    <div class="container text-center">
+      <p class="mb-0">&copy; 2024 Plataforma de Ideias - Instituto J&F Tech. Todos os direitos reservados.</p>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/modal.js"></script>
+  <script src="/js/dropdown-fallback.js"></script>
+</body>
 </html>

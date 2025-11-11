@@ -2,10 +2,11 @@ const express = require("express");
 const router = express.Router();
 const IdeaController = require("../controller/IdeaController");
 
-router.get("/", IdeaController.index);
-router.get("/:id", IdeaController.show);
-router.post("/", IdeaController.store);
-router.put("/:id", IdeaController.update);
-router.delete("/:id", IdeaController.delete);
+// Manter rotas antigas da API (compatibilidade)
+router.get("/", IdeaController.listIdeas);
+router.get("/:id", IdeaController.showIdea);
+router.post("/", IdeaController.createIdea);
+router.put("/:id", IdeaController.updateIdea);
+router.delete("/:id", IdeaController.deleteIdea);
 
 module.exports = router;

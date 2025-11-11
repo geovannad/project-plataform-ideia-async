@@ -1,40 +1,83 @@
 require("dotenv").config();
 
-const categoryRoutes = require("./routes/CategoryRoutes");
-const userRoutes = require("./routes/UserRoutes");
-const ideaRoutes = require("./routes/IdeaRoutes");
-
 const express = require("express");
 const exphbs = require("express-handlebars");
 const path = require("path");
+const session = require("express-session");
+const flash = require("connect-flash");
+const helmet = require("helmet");
+const csrf = require("csurf");
+const { body, validationResult } = require("express-validator");
 
-// Importando conexão e modelos
-const conn = require("./db/conn");
-const { DataTypes } = require("sequelize");
-const UserModel = require("./models/User");
-const User = UserModel(conn, DataTypes);
-const Address = require("./models/Address");
+// Importando modelos
+const db = require("./models");
+const { User, Idea, Category, Vote } = db;
+
+// Importando middlewares
+const isLoggedIn = require("./middlewares/isLoggedIn");
+const isAuthor = require("./middlewares/isAuthor");
+
+// Importando controllers
+const IdeaController = require("./controller/IdeaController");
+const VoteController = require("./controller/VoteController");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Importar rotas antigas
+const categoryRoutes = require("./routes/CategoryRoutes");
+const userRoutes = require("./routes/UserRoutes");
+const ideaRoutes = require("./routes/IdeaRoutes");
 
 app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/user", userRoutes);
 app.use("/api/v1/idea", ideaRoutes);
 
-function checkAuth(req, res, next) {
-  if (!req.session.user) {
-    return res.redirect("/login");
-  }
-  next();
-}
-const bcrypt = require("bcryptjs");
 
-// Configuração do Handlebars
+// Configuração de Segurança
+// Helmet com CSP customizada para permitir os assets confiáveis (CDN) e recursos locais
+app.use(
+  helmet({
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+        styleSrc: ["'self'", 'https://cdn.jsdelivr.net', "'unsafe-inline'"],
+        connectSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+        imgSrc: ["'self'", 'data:'],
+        fontSrc: ["'self'", 'https://cdn.jsdelivr.net'],
+        objectSrc: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+  })
+);
+
+// Configuração do Handlebars com helpers
+const helpers = {
+  eq: (a, b) => a === b,
+  includes: (arr, val) => arr && arr.includes(val),
+  truncate: (str, length) => {
+    if (str && str.length > length) {
+      return str.substring(0, length) + '...';
+    }
+    return str;
+  },
+  formatDate: (date) => {
+    if (!date) return '';
+    return new Date(date).toLocaleDateString('pt-BR', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  },
+};
+
 app.engine(
   "handlebars",
   exphbs.engine({
     defaultLayout: "main",
+    helpers,
     runtimeOptions: {
       allowProtoPropertiesByDefault: true,
       allowProtoMethodsByDefault: true,
@@ -48,378 +91,321 @@ app.set("views", path.join(__dirname, "views"));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
 
-// Sessão (para login)
-const session = require("express-session");
+// Configuração de Sessão
+const sessionConfig = {
+  secret: process.env.SESSION_SECRET || "chave-super-secreta-mudeme",
+  resave: false,
+  saveUninitialized: false,
+  cookie: {
+    secure: process.env.NODE_ENV === "production",
+    httpOnly: true,
+    maxAge: 24 * 60 * 60 * 1000, // 24 horas
+  },
+};
 
-app.use(
-  session({
-    secret: process.env.SESSION_SECRET || "chave-super-secreta",
-    resave: false,
-    saveUninitialized: false,
-  })
-);
+app.use(session(sessionConfig));
 
-// Middleware para disponibilizar o usuário logado nas views
-app.use((req, res, next) => {
-  res.locals.loggedUser = req.session.user || null;
-  next();
-});
+// Flash Messages
+app.use(flash());
+
+// CSRF Protection
+const csrfProtection = csrf({ cookie: false });
+app.use(csrfProtection);
 
 // Servir arquivos estáticos
 app.use(express.static(path.join(__dirname, "public")));
-// Servir pasta `assets` com imagens e outros arquivos que estão na raiz
 app.use("/assets", express.static(path.join(__dirname, "assets")));
 
+// Middleware para disponibilizar dados nas views
+app.use((req, res, next) => {
+  res.locals.loggedUser = req.session.user || null;
+  res.locals.messages = req.flash();
+  res.locals.csrfToken = req.csrfToken();
+  next();
+});
+
 // ===============================
-// ROTAS PRINCIPAIS
+// ROTAS DE AUTENTICAÇÃO
 // ===============================
 
-// Página inicial de login
+const bcrypt = require("bcryptjs");
+
+// GET /login - Mostrar página de login
 app.get("/login", (req, res) => {
- res.render("login", { layout: "authLayout" });
-});
-
-// Registro de novo usuário
-app.post("/register", async (req, res) => {
-  try {
-    const { name, email, password, cpf } = req.body;
-
-    // validações simples
-    if (!name || !email || !password || !cpf) {
-      return res.render("register", { error: "Preencha todos os campos!" });
-    }
-
-    const existingUser = await User.findOne({ where: { email } });
-    if (existingUser) {
-      return res.render("register", { error: "Esse email já está cadastrado!" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    // inclui o cpf aqui 👇
-    const newUser = await User.create({
-      name,
-      email,
-      password: hashedPassword,
-      cpf,
-    });
-
-    req.session.user = {
-      id: newUser.id,
-      name: newUser.name,
-      email: newUser.email,
-    };
-
-    res.redirect("/");
-  } catch (error) {
-    console.error("Erro ao registrar:", error);
-    res.render("register", { error: "Erro ao registrar usuário." });
+  if (req.session.user) {
+    return res.redirect("/");
   }
+  res.render("auth/login", { layout: "authLayout" });
 });
 
-
-// Login
-app.post("/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    if (!email || !password) {
-      return res.send("<script>alert('Preencha todos os campos.'); window.history.back();</script>");
-    }
-
-    const user = await User.findOne({ where: { email } });
-    if (!user) {
-      return res.send("<script>alert('Usuário não encontrado.'); window.history.back();</script>");
-    }
-
-    const passwordMatch = await bcrypt.compare(password, user.password);
-    if (!passwordMatch) {
-      return res.send("<script>alert('Senha incorreta.'); window.history.back();</script>");
-    }
-
-    req.session.user = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-    };
-
-    console.log("Usuário logado:", user.email);
-    res.redirect("/");
-  } catch (error) {
-    console.error("Erro no login:", error);
-    res.send("<script>alert('Erro ao fazer login. Tente novamente.'); window.history.back();</script>");
+// GET /register - Mostrar página de registro
+app.get("/register", (req, res) => {
+  if (req.session.user) {
+    return res.redirect("/");
   }
+  res.render("auth/register", { layout: "authLayout" });
 });
 
+// POST /register - Registrar novo usuário
+app.post(
+  "/register",
+  [
+    body("name", "Nome é obrigatório").trim().notEmpty(),
+    body("email", "Email inválido").isEmail(),
+    body("password", "Senha deve ter pelo menos 6 caracteres").isLength({
+      min: 6,
+    }),
+    body("cpf", "CPF é obrigatório").trim().notEmpty(),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.render("auth/register", {
+          errors: errors.array(),
+          formData: req.body,
+          layout: "authLayout",
+        });
+      }
+
+      const { name, email, password, cpf } = req.body;
+
+      // Verificar se usuário já existe
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        req.flash("error", "Este email já está registrado");
+        return res.render("auth/register", {
+          error: "Este email já está registrado",
+          formData: req.body,
+          layout: "authLayout",
+        });
+      }
+
+      // Hash da senha
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      // Criar usuário
+      const newUser = await User.create({
+        name,
+        email,
+        password: hashedPassword,
+        cpf,
+      });
+
+      req.session.user = {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+      };
+
+      req.flash("success", "Registro realizado com sucesso!");
+      res.redirect("/");
+    } catch (error) {
+      console.error("Erro ao registrar:", error);
+      req.flash("error", "Erro ao registrar usuário");
+      res.render("auth/register", {
+        error: "Erro ao registrar usuário",
+        formData: req.body,
+        layout: "authLayout",
+      });
+    }
+  }
+);
 
 
-// Logout
-app.get("/logout", (req, res) => {
-  req.session.destroy(() => {
+// POST /login - Login do usuário
+app.post(
+  "/login",
+  [
+    body("email", "Email inválido").isEmail(),
+    body("password", "Senha é obrigatória").notEmpty(),
+  ],
+  async (req, res) => {
+    try {
+      const errors = validationResult(req);
+      if (!errors.isEmpty()) {
+        return res.render("auth/login", {
+          errors: errors.array(),
+          formData: req.body,
+          layout: "authLayout",
+        });
+      }
+
+      const { email, password } = req.body;
+
+      // Buscar usuário
+      const user = await User.findOne({ where: { email } });
+      if (!user) {
+        req.flash("error", "Email ou senha inválidos");
+        return res.render("auth/login", {
+          error: "Email ou senha inválidos",
+          formData: req.body,
+          layout: "authLayout",
+        });
+      }
+
+      // Comparar senha
+      const passwordMatch = await bcrypt.compare(password, user.password);
+      if (!passwordMatch) {
+        req.flash("error", "Email ou senha inválidos");
+        return res.render("auth/login", {
+          error: "Email ou senha inválidos",
+          formData: req.body,
+          layout: "authLayout",
+        });
+      }
+
+      // Criar sessão
+      req.session.user = {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+      };
+
+      req.flash("success", `Bem-vindo, ${user.name}!`);
+      res.redirect("/");
+    } catch (error) {
+      console.error("Erro ao fazer login:", error);
+      req.flash("error", "Erro ao fazer login");
+      res.render("auth/login", {
+        error: "Erro ao fazer login",
+        formData: req.body,
+        layout: "authLayout",
+      });
+    }
+  }
+);
+
+
+
+// POST /logout - Fazer logout (via form com CSRF)
+app.post("/logout", (req, res) => {
+  req.session.destroy((err) => {
+    // Ignorar erro na destruição da sessão e sempre limpar o cookie
     res.clearCookie("connect.sid");
     res.redirect("/login");
   });
 });
 
-
-// Página inicial - Lista todos os ideia
-app.get("/", checkAuth, async (req, res) => {
-  try {
-    const users = await User.findAll({
-      order: [["createdAt", "DESC"]], // Mais recentes primeiro
-      raw: true,
-    });
-
-    console.log(`Encontrados ${users.length} ideias `);
-    res.render("home", { users });
-  } catch (error) {
-    console.error("Erro ao buscar ideias:", error);
-    res.render("home", {
-      users: [],
-      error: "Erro ao carregar ideias",
-    });
+// GET /logout - Fallback para ambiente de desenvolvimento
+app.get('/logout', (req, res) => {
+  if (process.env.NODE_ENV === 'production') {
+    // Em produção, forçamos o uso de POST para logout (mais seguro)
+    return res.status(405).send('Method Not Allowed');
   }
+  req.session.destroy(() => {
+    res.clearCookie('connect.sid');
+    res.redirect('/login');
+  });
 });
 
 // ===============================
 // ROTAS DE IDEIAS
 // ===============================
 
-// Página de cadastro de ideia
-app.get("/users/create", checkAuth, (req, res) => {
-  res.render("adduser");
-});
+// GET / - Home - Listar todas as ideias
+app.get("/", IdeaController.listIdeas);
 
-// Criar novo ideia
-app.post("/users/create", checkAuth, async (req, res) => {
-  try {
-    const { name, occupation, newsletter } = req.body;
+// GET /ideas/create - Mostrar formulário de criar ideia
+app.get("/ideas/create", isLoggedIn, IdeaController.showCreateForm);
 
-    // Validação básica
-    if (!name || name.trim().length < 2) {
-      return res.render("adduser", {
-        error: "Título deve ter pelo menos 2 caracteres",
-        formData: { name, occupation, newsletter },
-      });
-    }
+// POST /ideas - Criar nova ideia
+app.post(
+  "/ideas",
+  isLoggedIn,
+  [
+    body("title", "Título é obrigatório").trim().notEmpty().isLength({ min: 3 }),
+    body("description", "Descrição é obrigatória")
+      .trim()
+      .notEmpty()
+      .isLength({ min: 10 }),
+  ],
+  IdeaController.createIdea
+);
 
-    const userData = {
-      name: name.trim(),
-      occupation: occupation ? occupation.trim() : null,
-      newsletter: newsletter === "on",
-    };
+// GET /ideas/:id - Ver detalhes da ideia
+app.get("/ideas/:id", IdeaController.showIdea);
 
-    const user = await User.create(userData);
-    console.log("Ideia criada:", user.toJSON());
+// GET /ideas/:id/edit - Mostrar formulário de edição
+app.get("/ideas/:id/edit", isLoggedIn, isAuthor, IdeaController.showEditForm);
 
-    res.redirect("/");
-  } catch (error) {
-    console.error("Erro ao criar ideia:", error);
-    res.render("adduser", {
-      error: "Erro ao criar ideia: " + error.message,
-      formData: req.body,
-    });
-  }
-});
+// POST /ideas/:id - Atualizar ideia
+app.post(
+  "/ideas/:id",
+  isLoggedIn,
+  isAuthor,
+  [
+    body("title", "Título é obrigatório").trim().notEmpty().isLength({ min: 3 }),
+    body("description", "Descrição é obrigatória")
+      .trim()
+      .notEmpty()
+      .isLength({ min: 10 }),
+  ],
+  IdeaController.updateIdea
+);
 
-// Ver detalhes de um ideia
-app.get("/users/:id", checkAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const user = await User.findByPk(id, {
-      include: [
-        {
-          model: Address,
-          as: "addresses",
-        },
-      ],
-    });
-
-    if (!user) {
-      return res.render("userview", {
-        error: "Ideia não encontrada",
-      });
-    }
-
-    res.render("userview", {
-      user: user.toJSON(),
-    });
-  } catch (error) {
-    console.error("Erro ao buscar ideia:", error);
-    res.render("userview", {
-      error: "Erro ao carregar ideia",
-    });
-  }
-});
-
-// Página de edição de ideia
-app.get("/users/edit/:id", checkAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const user = await User.findByPk(id, {
-      include: [
-        {
-          model: Address,
-          as: "addresses",
-          order: [["createdAt", "DESC"]],
-        },
-      ],
-    });
-
-    if (!user) {
-      return res.redirect("/");
-    }
-
-    res.render("useredit", {
-      user: user.toJSON(),
-    });
-  } catch (error) {
-    console.error("Erro ao buscar ideia para edição:", error);
-    res.redirect("/");
-  }
-});
-
-// Atualizar ideia
-app.post("/users/update", checkAuth, async (req, res) => {
-  try {
-    const { id, name, occupation, newsletter } = req.body;
-
-    // Validação
-    if (!name || name.trim().length < 2) {
-      return res.redirect(`/users/edit/${id}`);
-    }
-
-    const updateData = {
-      name: name.trim(),
-      occupation: occupation ? occupation.trim() : null,
-      newsletter: newsletter === "on",
-    };
-
-    const [updatedRows] = await User.update(updateData, {
-      where: { id },
-    });
-
-    if (updatedRows === 0) {
-      console.log("Nenhum ideia foi atualizado");
-    } else {
-      console.log(`Ideia ${id} atualizada com sucesso`);
-    }
-
-    res.redirect("/");
-  } catch (error) {
-    console.error("Erro ao atualizar ideia:", error);
-    res.redirect(`/users/edit/${req.body.id || ""}`);
-  }
-});
-
-// Excluir ideia
-app.post("/users/delete/:id", checkAuth, async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Primeiro, deletar todos os endereços do ideia
-    await Address.destroy({
-      where: { userId: id },
-    });
-
-    // Depois, deletar o ideia
-    const deletedRows = await User.destroy({
-      where: { id },
-    });
-
-    if (deletedRows > 0) {
-      console.log(`ideia ${id} e seus endereços foram excluídos`);
-    } else {
-      console.log("Nenhum ideia foi excluído");
-    }
-
-    res.redirect("/");
-  } catch (error) {
-    console.error("Erro ao excluir ideia:", error);
-    res.redirect("/");
-  }
-});
+// POST /ideas/:id/delete - Deletar ideia
+app.post("/ideas/:id/delete", isLoggedIn, isAuthor, IdeaController.deleteIdea);
 
 // ===============================
-// ROTAS DE ENDEREÇOS
+// ROTAS DE VOTAÇÃO
 // ===============================
 
-// Criar novo endereço
-app.post("/address/create", async (req, res) => {
-  try {
-    const { userId, street, number, city } = req.body;
+// POST /ideas/:ideaId/vote - Votar em uma ideia
+app.post("/ideas/:ideaId/vote", isLoggedIn, VoteController.vote);
 
-    // Validação
-    if (!street || street.trim().length < 5) {
-      return res.redirect(`/users/edit/${userId}`);
-    }
-
-    if (!city || city.trim().length < 2) {
-      return res.redirect(`/users/edit/${userId}`);
-    }
-
-    const addressData = {
-      street: street.trim(),
-      number: number ? number.trim() : null,
-      city: city.trim(),
-      userId,
-    };
-
-    const address = await Address.create(addressData);
-    console.log("Endereço criado:", address.toJSON());
-
-    res.redirect(`/users/edit/${userId}`);
-  } catch (error) {
-    console.error("Erro ao criar endereço:", error);
-    res.redirect(`/users/edit/${req.body.userId || ""}`);
-  }
-});
-
-// Excluir endereço
-app.post("/address/delete", async (req, res) => {
-  try {
-    const { id, userId } = req.body;
-
-    const deletedRows = await Address.destroy({
-      where: { id },
-    });
-
-    if (deletedRows > 0) {
-      console.log(`Endereço ${id} excluído`);
-    }
-
-    res.redirect(userId ? `/users/edit/${userId}` : "/");
-  } catch (error) {
-    console.error("Erro ao excluir endereço:", error);
-    res.redirect("/");
-  }
-});
+// POST /ideas/:ideaId/unvote - Remover voto de uma ideia
+app.post("/ideas/:ideaId/unvote", isLoggedIn, VoteController.removeVote);
 
 // ===============================
-// TRATAMENTO DE ERROS 404
+// ROTAS DE PERFIL
 // ===============================
+
+// GET /profile - Perfil do usuário logado
+app.get("/profile", isLoggedIn, IdeaController.getUserIdeas);
+
+// ===============================
+// TRATAMENTO DE ERROS
+// ===============================
+
+// Middleware para capturar erros 404
 app.use((req, res) => {
-  res.status(404).render("home", {
-    users: [],
-    error: "Página não encontrada",
+  res.status(404).render("error", {
+    title: "404 - Página não encontrada",
+    message: "A página que você procura não existe",
+  });
+});
+
+// Middleware de tratamento de erros global
+app.use((err, req, res, next) => {
+  console.error("Erro:", err);
+  
+  if (err.code === "EBADCSRFTOKEN") {
+    req.flash("error", "Erro de segurança. Por favor, tente novamente.");
+    return res.redirect(req.headers.referer || "/");
+  }
+
+  res.status(err.status || 500).render("error", {
+    title: err.status || "500 - Erro Interno do Servidor",
+    message: err.message || "Ocorreu um erro ao processar sua solicitação",
   });
 });
 
 // ===============================
 // INICIALIZAÇÃO DO SERVIDOR
 // ===============================
+
 async function startServer() {
   try {
     // Sincronizar modelos com o banco de dados
-    await conn.sync();
+    await db.sequelize.sync({ alter: process.env.NODE_ENV === "development" });
     console.log("✅ Modelos sincronizados com o banco de dados!");
 
     // Iniciar servidor
     app.listen(PORT, () => {
       console.log(`🚀 Servidor rodando em http://localhost:${PORT}`);
       console.log("💡 Pressione Ctrl+C para parar o servidor");
+      console.log(`📍 Ambiente: ${process.env.NODE_ENV || "development"}`);
     });
   } catch (error) {
     console.error("❌ Erro ao iniciar servidor:", error);

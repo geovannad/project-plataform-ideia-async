@@ -1,0 +1,103 @@
+<div class="row mb-4">
+  <div class="col-md-8">
+    <h1>
+      <i class="bi bi-plus-circle"></i> Criar Nova Ideia
+    </h1>
+  </div>
+</div>
+
+<div class="row">
+  <div class="col-md-8">
+    <div class="card shadow-sm">
+      <div class="card-body p-4">
+        <form method="POST" action="/ideas" novalidate>
+          <input type="hidden" name="_csrf" value="{{csrfToken}}">
+
+          {{#if errors}}
+            <div class="alert alert-danger mb-4">
+              <h6 class="mb-2">
+                <i class="bi bi-exclamation-circle"></i> Erros ao Validar:
+              </h6>
+              <ul class="mb-0">
+                {{#each errors}}
+                  <li>{{this.msg}}</li>
+                {{/each}}
+              </ul>
+            </div>
+          {{/if}}
+
+          <div class="mb-4">
+            <label for="title" class="form-label">
+              <i class="bi bi-pencil"></i> Título da Ideia *
+            </label>
+            <input 
+              type="text" 
+              class="form-control form-control-lg" 
+              id="title" 
+              name="title" 
+              value="{{formData.title}}" 
+              placeholder="Digite um título criativo..."
+              required
+            >
+            <small class="text-muted">Mínimo 3 caracteres</small>
+          </div>
+
+          <div class="mb-4">
+            <label for="description" class="form-label">
+              <i class="bi bi-file-text"></i> Descrição Detalhada *
+            </label>
+            <textarea 
+              class="form-control" 
+              id="description" 
+              name="description" 
+              rows="6"
+              placeholder="Descreva sua ideia em detalhes..."
+              required
+            >{{formData.description}}</textarea>
+            <small class="text-muted">Mínimo 10 caracteres</small>
+          </div>
+
+          <div class="mb-4">
+            <label for="id_category" class="form-label">
+              <i class="bi bi-tag"></i> Categoria
+            </label>
+            <select class="form-select form-select-lg" id="id_category" name="id_category">
+              <option value="">-- Selecione uma categoria --</option>
+              {{#each categories}}
+                <option value="{{this.id}}" {{#eq this.id ../formData.id_category}}selected{{/eq}}>
+                  {{this.name}}
+                </option>
+              {{/each}}
+            </select>
+          </div>
+
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary btn-lg">
+              <i class="bi bi-check-circle"></i> Criar Ideia
+            </button>
+            <a href="/" class="btn btn-outline-secondary btn-lg">
+              <i class="bi bi-x-circle"></i> Cancelar
+            </a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card bg-light shadow-sm">
+      <div class="card-body">
+        <h6 class="card-title">
+          <i class="bi bi-lightbulb"></i> Dicas para uma Ótima Ideia
+        </h6>
+        <ul class="small">
+          <li><strong>Seja claro:</strong> Explique sua ideia de forma concisa</li>
+          <li><strong>Seja específico:</strong> Detalhe como sua ideia funcionaria</li>
+          <li><strong>Impacto:</strong> Mostre o benefício para o Instituto</li>
+          <li><strong>Realista:</strong> Considere a viabilidade da implementação</li>
+          <li><strong>Inovador:</strong> Traga algo novo ou melhorado</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</div>

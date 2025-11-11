@@ -1,41 +1,99 @@
-{{#if users}}
-  <div class="users-grid">
-    {{#each users}}
-      <div class="user-card">
-        <div class="user-info">
-          <div class="title">
-            <h3>{{this.name}}</h3>
-            <p class="category">💼 {{this.occupation}}</p>
-          </div>
-          <p class="discription">{{this.newsletter}}
-          </p>
-        </div>
-        <div class="user-actions">
-          <form action="/idea/agree/{{this.id}}" method="POST">
-            <img
-              onclick="return confirm('Tem certeza que deseja votar que SIM?')"
-              src="/assets/like.png"
-              alt="like"
-              class="like-icon"
-            />
+<div class="row mb-4">
+  <div class="col-md-8">
+    <h1 class="mb-4">
+      <i class="bi bi-lightbulb"></i> Todas as Ideias
+    </h1>
+  </div>
+  {{#if loggedUser}}
+    <div class="col-md-4 text-end">
+      <a href="/ideas/create" class="btn btn-primary btn-lg">
+        <i class="bi bi-plus-circle"></i> Nova Ideia
+      </a>
+    </div>
+  {{/if}}
+</div>
 
-          </form>
-          <form action="/idea/desagree/{{this.id}}" method="POST">
-            <img
-              onclick="return confirm('Tem certeza que deseja votar que NÃO?')"
-              src="/assets/dislike.png"
-              alt="dislike"
-              class="dislike-icon"
-            />
-          </form>
+{{#if ideas}}
+  <div class="row g-4">
+    {{#each ideas}}
+      <div class="col-md-6 col-lg-4">
+        <div class="card h-100 shadow-sm hover-shadow">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <h5 class="card-title flex-grow-1">{{this.title}}</h5>
+              <span class="badge bg-primary">
+                <i class="bi bi-hand-thumbs-up"></i> {{this.voteCount}}
+              </span>
+            </div>
+
+            {{#if this.Category}}
+              <span class="badge bg-info mb-2">{{this.Category.name}}</span>
+            {{/if}}
+
+            <p class="card-text text-muted small">{{truncate this.description 100}}</p>
+
+            <div class="d-flex justify-content-between align-items-center mt-3 pt-3 border-top">
+              <small class="text-muted">
+                <i class="bi bi-person"></i> {{this.User.name}}
+              </small>
+              <small class="text-muted">
+                <i class="bi bi-calendar"></i> {{formatDate this.created_date}}
+              </small>
+            </div>
+          </div>
+          <div class="card-footer bg-light">
+            <div class="d-grid gap-2">
+              <a href="/ideas/{{this.id}}" class="btn btn-sm btn-outline-primary">
+                <i class="bi bi-eye"></i> Ver Detalhes
+              </a>
+              {{#if ../loggedUser}}
+                {{#if (eq this.User.id ../loggedUser.id)}}
+                  <a href="/ideas/{{this.id}}/edit" class="btn btn-sm btn-outline-warning">
+                    <i class="bi bi-pencil"></i> Editar
+                  </a>
+                {{else}}
+                  {{#if (includes ../userVotes this.id)}}
+                    <form method="POST" action="/ideas/{{this.id}}/unvote" style="display: inline;">
+                      <input type="hidden" name="_csrf" value="{{../csrfToken}}">
+                      <button type="submit" class="btn btn-sm btn-success w-100">
+                        <i class="bi bi-hand-thumbs-up-fill"></i> Remover Voto
+                      </button>
+                    </form>
+                  {{else}}
+                    <form method="POST" action="/ideas/{{this.id}}/vote" style="display: inline;">
+                      <input type="hidden" name="_csrf" value="{{../csrfToken}}">
+                      <button type="submit" class="btn btn-sm btn-outline-success w-100">
+                        <i class="bi bi-hand-thumbs-up"></i> Votar
+                      </button>
+                    </form>
+                  {{/if}}
+                {{/if}}
+              {{else}}
+                <a href="/login" class="btn btn-sm btn-outline-primary w-100">
+                  <i class="bi bi-box-arrow-in-right"></i> Faça Login para Votar
+                </a>
+              {{/if}}
+            </div>
+          </div>
         </div>
       </div>
     {{/each}}
   </div>
 {{else}}
-  <div class="empty-state">
-    <h3>Nenhuma ideia cadastrada ainda</h3>
-    <p>Que tal adicionar a primeira ideia?</p>
-    <a href="/users/create" class="btn-primary">Criar Primeira Ideia</a>
+  <div class="text-center py-5">
+    <div class="mb-4">
+      <i class="bi bi-inbox" style="font-size: 3rem; color: #ccc;"></i>
+    </div>
+    <h3 class="mb-2">Nenhuma Ideia Cadastrada</h3>
+    <p class="text-muted mb-4">Seja o primeiro a compartilhar uma ideia inovadora!</p>
+    {{#if loggedUser}}
+      <a href="/ideas/create" class="btn btn-primary">
+        <i class="bi bi-plus-circle"></i> Criar Primeira Ideia
+      </a>
+    {{else}}
+      <a href="/login" class="btn btn-primary">
+        <i class="bi bi-box-arrow-in-right"></i> Faça Login para Criar Ideias
+      </a>
+    {{/if}}
   </div>
 {{/if}}
