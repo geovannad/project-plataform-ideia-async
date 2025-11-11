@@ -28,10 +28,15 @@ module.exports = {
   // CREATE
   async store(req, res) {
     try {
-      const { title, description, category, id_category, id_user, created_date } = req.body;
-      const idea = await Idea.create({ title, description, category, id_category, id_user, created_date });
-
-      return res.status(201).json(idea);
+      id_user = req.session.userId
+      console.log(id_user)
+      const { title, description, category, id_category } = req.body;
+      const idea = await Idea.create({ title, description, category, id_category, id_user, created_date: new Date() });
+      
+      res.render("home", {
+        layout: "main",
+        success: "Criação de ideia realizado com sucesso!",
+      });
     } catch (error) {
       return res.status(500).json({ error: error.message });
     }

@@ -1,0 +1,20 @@
+<div id="createIdea" class="modal">
+  <div class="modal-content">
+    <span class="close" onclick="closeModal('createIdea')">&times;</span>
+    <h2>Criando Ideia</h2>
+    <form method="POST" action="/api/v1/idea/">
+      <label for="title">Título:</label>
+      <input type="text" name="title" required>
+      <label for="description">Descrição:</label>
+      <input type="text" name="description" required>
+      <label for="category">Categoria:</label>
+      <select name="id_category" >
+        <option value="1">RH</option>
+        <option value="2">Investimentos</option>
+        <option value="3">Tech</option>
+        <option value="4">Business</option>
+      </select>
+      <button type="submit">Criar</button>
+    </form>
+  </div>
+</div>

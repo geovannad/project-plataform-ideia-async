@@ -36,6 +36,18 @@
   <div class="empty-state">
     <h3>Nenhuma ideia cadastrada ainda</h3>
     <p>Que tal adicionar a primeira ideia?</p>
-    <a href="/users/create" class="btn-primary">Criar Primeira Ideia</a>
+    <button onclick="openModal('createIdea')" class="btn-primary">Criar Primeira Ideia</button>
   </div>
 {{/if}}
+  
+  {{#if error}}
+    <p class="message error">{{error}}</p>
+  {{/if}}
+
+  {{#if success}}
+    <p class="message success">{{success}}</p>
+  {{/if}}
+</div>
+
+
+{{> createIdeaModal}}
