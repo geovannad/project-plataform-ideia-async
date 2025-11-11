@@ -1,0 +1,77 @@
+const express = require("express");
+const router = express.Router();
+const bcrypt = require("bcrypt");
+const conn = require("../db/conn");
+const { DataTypes } = require("sequelize");
+const User = require("../models/User")(conn, DataTypes);
+
+module.exports = {
+  async register(req, res) {
+    try {
+      const { name, cpf, email, password } = req.body;
+
+      const existingUser = await User.findOne({ where: { email } });
+      if (existingUser) {
+        return res.render("login", {
+          layout: "authLayout",
+          error: "Email já cadastrado!",
+        });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+
+      await User.create({
+        name,
+        cpf,
+        email,
+        password: hashedPassword,
+        created_date: new Date(),
+      });
+
+      res.render("home", {
+        layout: "main",
+        success: "Cadastro realizado com sucesso!",
+      });
+    } catch (error) {
+      console.error(error);
+      res.render("login", { layout: "authLayout", error: "Erro ao cadastrar." });
+    }
+  },
+  
+  async login(req, res) {
+    try {
+      const { email, password } = req.body;
+
+      const user = await User.findOne({ where: { email } });
+
+      if (!user) {
+        return res.render("login", {
+          layout: "authLayout",
+          error: "Usuário não encontrado.",
+        });
+      }
+
+      const isValidPassword = await bcrypt.compare(password, user.password);
+      if (!isValidPassword) {
+        return res.render("login", {
+          layout: "authLayout",
+          error: "Senha incorreta.",
+        });
+      }
+
+      req.session.userId = user.id;
+      req.session.user = user;
+
+      res.redirect("/");
+    } catch (error) {
+      console.error(error);
+      res.render("login", { layout: "authLayout", error: "Erro no login." });
+    }
+  },
+
+  async logout(req, res) {
+  req.session.destroy(() => {
+    res.redirect("/login");
+  });
+    }
+};

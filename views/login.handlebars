@@ -1,16 +1,28 @@
-<div style="text-align:center; margin-top:2rem;">
-  <button class="btn btn-primary" onclick="openModal('loginModal')">Login</button>
-  <p>Não possui cadastro?</p>
-  <button class="btn btn-info" onclick="openModal('registerModal')">Cadastrar</button>
+<link rel="stylesheet" href="/css/login.css">
+
+<div class="login-container">
+  <div class="login-card">
+    <h2>Bem-vindo 👋</h2>
+
+    <button class="btn btn-primary" onclick="openModal('loginModal')">
+      Entrar
+    </button>
+
+    <p class="text-info">Não possui cadastro?</p>
+
+    <button class="btn btn-info" onclick="openModal('registerModal')">
+      Criar conta
+    </button>
+
+    {{#if error}}
+      <p class="message error">{{error}}</p>
+    {{/if}}
+
+    {{#if success}}
+      <p class="message success">{{success}}</p>
+    {{/if}}
+  </div>
+
+  {{> loginModal}}
+  {{> registerModal}}
 </div>
-
-{{#if error}}
-  <p style="color:red; text-align:center;">{{error}}</p>
-{{/if}}
-
-{{#if success}}
-  <p style="color:green; text-align:center;">{{success}}</p>
-{{/if}}
-
-{{> loginModal}}
-{{> registerModal}}
