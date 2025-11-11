@@ -8,9 +8,25 @@ module.exports = (sequelize, DataTypes) => {
     title: DataTypes.STRING(200),
     description: DataTypes.STRING(500),
     category: DataTypes.STRING(50),
-    id_category: DataTypes.INTEGER,
-    id_user: DataTypes.INTEGER,
-    created_date: DataTypes.DATE
+    id_category: {
+      type: DataTypes.INTEGER,
+      references: {
+        model: 'category',
+        key: 'id',
+      },
+    },
+    id_user: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'User',
+        key: 'id',
+      },
+    },
+    created_date: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    }
   }, {
     tableName: 'Ideia',
     timestamps: false

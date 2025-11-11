@@ -1,3 +1,6 @@
+// DESCONTINUADO: Usar Response.js ao invés disso
+// Este arquivo é mantido apenas para compatibilidade retrógrada
+
 module.exports = (sequelize, DataTypes) => {
   const Vote = sequelize.define(
     'Vote',
@@ -29,15 +32,8 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     {
-      tableName: 'vote',
+      tableName: 'Response', // Usar a tabela Response do banco
       timestamps: false,
-      indexes: [
-        {
-          unique: true,
-          fields: ['id_user', 'id_idea'],
-          name: 'idx_user_idea_unique',
-        },
-      ],
     }
   );
 

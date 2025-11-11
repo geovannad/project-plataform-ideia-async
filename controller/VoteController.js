@@ -1,4 +1,4 @@
-const { Vote, Idea, User } = require('../models');
+const { Response, Idea, User } = require('../models');
 const { Op, sequelize } = require('sequelize');
 
 module.exports = {
@@ -16,10 +16,11 @@ module.exports = {
       }
 
       // Verificar se o usuário já votou nessa ideia
-      const existingVote = await Vote.findOne({
+      const existingVote = await Response.findOne({
         where: {
           id_user: userId,
-          id_idea: ideaId,
+          id_ideia: ideaId,
+          voted: true
         },
       });
 
@@ -29,9 +30,11 @@ module.exports = {
       }
 
       // Criar o voto
-      await Vote.create({
+      await Response.create({
         id_user: userId,
-        id_idea: ideaId,
+        id_ideia: ideaId,
+        voted: true,
+        created_date: new Date(),
       });
 
       req.flash('success', 'Voto registrado com sucesso!');
@@ -49,10 +52,11 @@ module.exports = {
       const { ideaId } = req.params;
       const userId = req.session.user.id;
 
-      const vote = await Vote.findOne({
+      const vote = await Response.findOne({
         where: {
           id_user: userId,
-          id_idea: ideaId,
+          id_ideia: ideaId,
+          voted: true
         },
       });
 
@@ -74,8 +78,11 @@ module.exports = {
   // Obter contagem de votos para uma ideia
   async getVoteCount(ideaId) {
     try {
-      const count = await Vote.count({
-        where: { id_idea: ideaId },
+      const count = await Response.count({
+        where: { 
+          id_ideia: ideaId,
+          voted: true
+        },
       });
       return count;
     } catch (error) {
@@ -87,10 +94,11 @@ module.exports = {
   // Verificar se usuário votou em uma ideia
   async hasUserVoted(userId, ideaId) {
     try {
-      const vote = await Vote.findOne({
+      const vote = await Response.findOne({
         where: {
           id_user: userId,
-          id_idea: ideaId,
+          id_ideia: ideaId,
+          voted: true
         },
       });
       return !!vote;
@@ -114,7 +122,7 @@ module.exports = {
           'created_date',
           [
             sequelize.literal(
-              `(SELECT COUNT(*) FROM vote WHERE vote.id_idea = "Idea"."id")`
+              `(SELECT COUNT(*) FROM "Response" WHERE "Response"."id_ideia" = "Idea"."id" AND "Response"."voted" = true)`
             ),
             'voteCount',
           ],

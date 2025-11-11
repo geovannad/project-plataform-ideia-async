@@ -1,4 +1,4 @@
-const { Idea, User, Category, Vote, sequelize } = require('../models');
+const { Idea, User, Category, Response, sequelize } = require('../models');
 const { body, validationResult } = require('express-validator');
 
 module.exports = {
@@ -16,7 +16,7 @@ module.exports = {
           'created_date',
           [
             sequelize.literal(
-              `(SELECT COUNT(*) FROM vote WHERE vote.id_idea = "Idea"."id")`
+              `(SELECT COUNT(*) FROM "Response" WHERE "Response"."id_ideia" = "Idea"."id" AND "Response"."voted" = true)`
             ),
             'voteCount',
           ],
@@ -40,12 +40,15 @@ module.exports = {
       // Se o usuário está logado, verificar em quais ideias ele votou
       let userVotes = [];
       if (req.session.user) {
-        const votes = await Vote.findAll({
-          where: { id_user: req.session.user.id },
-          attributes: ['id_idea'],
+        const votes = await Response.findAll({
+          where: { 
+            id_user: req.session.user.id,
+            voted: true
+          },
+          attributes: ['id_ideia'],
           raw: true,
         });
-        userVotes = votes.map(v => v.id_idea);
+        userVotes = votes.map(v => v.id_ideia);
       }
 
       res.render('home', {
@@ -143,17 +146,21 @@ module.exports = {
       }
 
       // Contar votos
-      const voteCount = await Vote.count({
-        where: { id_idea: id },
+      const voteCount = await Response.count({
+        where: { 
+          id_ideia: id,
+          voted: true
+        },
       });
 
       // Verificar se o usuário votou
       let hasVoted = false;
       if (req.session.user) {
-        hasVoted = !!(await Vote.findOne({
+        hasVoted = !!(await Response.findOne({
           where: {
             id_user: req.session.user.id,
-            id_idea: id,
+            id_ideia: id,
+            voted: true
           },
         }));
       }
@@ -272,8 +279,8 @@ module.exports = {
       }
 
       // Deletar votos associados
-      await Vote.destroy({
-        where: { id_idea: id },
+      await Response.destroy({
+        where: { id_ideia: id },
       });
 
       await idea.destroy();
@@ -303,7 +310,7 @@ module.exports = {
           'created_date',
           [
             sequelize.literal(
-              `(SELECT COUNT(*) FROM vote WHERE vote.id_idea = "Idea"."id")`
+              `(SELECT COUNT(*) FROM "Response" WHERE "Response"."id_ideia" = "Idea"."id" AND "Response"."voted" = true)`
             ),
             'voteCount',
           ],

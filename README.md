@@ -241,60 +241,57 @@ project-plataform-ideia-async/
 ### Diagrama de Entidade-Relacionamento (ER)
 
 ```
-┌─────────────────────┐
-│       USER          │
-├─────────────────────┤
-│ id (PK)             │
-│ name                │
-│ email (UNIQUE)      │
-│ password            │
-│ cpf (UNIQUE)        │
-│ created_date        │
-└────────┬────────────┘
+                    ┌─────────────────────┐
+                    │     CATEGORY        │
+                    ├─────────────────────┤
+                    │ id (PK) SERIAL      │
+                    │ name VARCHAR(100)   │
+                    │ created_date DATE   │
+                    └─────────┬───────────┘
+                              │
+                              │ 1:N (referenced by)
+                              │
+┌─────────────────────┐       │       ┌──────────────────────────┐
+│    USER             │       │       │        IDEIA             │
+├─────────────────────┤       │       ├──────────────────────────┤
+│ id (PK) SERIAL      │       └───────┤ id (PK) SERIAL           │
+│ name VARCHAR(100)   │               │ title VARCHAR(200)       │
+│ cpf VARCHAR(12)     │               │ description VARCHAR(500) │
+│ email VARCHAR(100)  │               │ category VARCHAR(50)     │
+│ created_date DATE   │               │ id_category INT (FK) ────┘
+│ password VARCHAR(50)│               │ created_date DATE
+└────────┬────────────┘               │ id_user INT (FK) ────────┐
+         │                            │  [UNIQUE: user+idea]     │
+         │ 1:N                        └──────────────────────────┘
+         │ (author)                           │
+         │                                    │ 1:N
+         │                    ┌───────────────┘
+         │                    │
+         │                    ▼
+         │            ┌──────────────────────────┐
+         │            │      RESPONSE            │
+         │            ├──────────────────────────┤
+         │            │ id (PK) SERIAL           │
+         │            │ id_user INT (FK) ────────┐
+         │            │ id_ideia INT (FK) ───────┤
+         │            │ created_date DATE        │
+         │            │ voted BOOLEAN            │
+         │            │ [UNIQUE: user+ideia]     │
+         │            └──────────────────────────┘
          │
-         │ 1:N (author)
-         │
-         ├──→ ┌──────────────────────┐
-         │    │      IDEA            │
-         │    ├──────────────────────┤
-         │    │ id (PK)              │
-         │    │ title                │
-         │    │ description          │
-         │    │ id_user (FK)         │
-         │    │ id_category (FK)     │
-         │    │ created_date         │
-         │    └────────┬─────────────┘
-         │             │
-         │             │ 1:N
-         │             │
-         │             ├──→ ┌──────────────────────┐
-         │             │    │      VOTE            │
-         │             │    ├──────────────────────┤
-         │             │    │ id (PK)              │
-         │             │    │ id_user (FK)         │
-         │             │    │ id_idea (FK)         │
-         │             │    │ created_date         │
-         │             │    │ [UNIQUE: user+idea]  │
-         │             │    └──────────────────────┘
-         │             │
-         │             └──→ ┌──────────────────────┐
-         │                  │    CATEGORY          │
-         │                  ├──────────────────────┤
-         │                  │ id (PK)              │
-         │                  │ name                 │
-         │                  │ created_date         │
-         │                  └──────────────────────┘
-         │
-         └──→ ┌──────────────────────┐
-              │     ADDRESS          │
-              ├──────────────────────┤
-              │ id (PK)              │
-              │ street               │
-              │ number               │
-              │ city                 │
-              │ id_user (FK)         │
-              └──────────────────────┘
+         └────→ [Relacionamento "criar ideias"]
+
+Legenda:
+- PK: Primary Key (Chave Primária)
+- FK: Foreign Key (Chave Estrangeira)
+- UNIQUE: Restrição de unicidade
 ```
+
+**Tabelas do Banco:**
+1. **Category**: Armazena categorias de ideias
+2. **User**: Armazena dados de usuários (CPF e Email únicos)
+3. **Ideia**: Armazena ideias com referência ao autor (User) e categoria (Category)
+4. **Response**: Armazena votações de usuários em ideias (equivalente a Vote/Voto)
 
 ### Fluxo de Autenticação
 ```

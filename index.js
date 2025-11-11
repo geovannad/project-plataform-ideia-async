@@ -11,7 +11,7 @@ const { body, validationResult } = require("express-validator");
 
 // Importando modelos
 const db = require("./models");
-const { User, Idea, Category, Vote } = db;
+const { User, Idea, Category, Response } = db;
 
 // Importando middlewares
 const isLoggedIn = require("./middlewares/isLoggedIn");

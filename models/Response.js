@@ -5,13 +5,40 @@ module.exports = (sequelize, DataTypes) => {
       primaryKey: true,
       autoIncrement: true
     },
-    id_user: DataTypes.INTEGER,
-    id_ideia: DataTypes.INTEGER,
-    created_date: DataTypes.DATE,
-    voted: DataTypes.BOOLEAN
+    id_user: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'User',
+        key: 'id',
+      },
+    },
+    id_ideia: {
+      type: DataTypes.INTEGER,
+      allowNull: false,
+      references: {
+        model: 'Ideia',
+        key: 'id',
+      },
+    },
+    created_date: {
+      type: DataTypes.DATE,
+      defaultValue: DataTypes.NOW
+    },
+    voted: {
+      type: DataTypes.BOOLEAN,
+      defaultValue: true
+    }
   }, {
     tableName: 'Response',
-    timestamps: false
+    timestamps: false,
+    indexes: [
+      {
+        unique: true,
+        fields: ['id_user', 'id_ideia'],
+        name: 'idx_user_ideia_unique',
+      },
+    ],
   });
 
   Response.associate = (models) => {

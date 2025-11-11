@@ -3,21 +3,37 @@ const path = require("path");
 const Sequelize = require("sequelize");
 const basename = path.basename(__filename);
 
+require("dotenv").config();
+
+// Determinar configuração de SSL
+const host = process.env.DB_HOST || "";
+const isLocal = host.includes("localhost");
+
+let dialectOptions = {};
+
+if (!isLocal) {
+  // Para banco em cloud (Aiven), usar SSL com certificado
+  const caPath = process.env.DB_SSL_CA;
+  
+  dialectOptions = {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false,
+      ca: caPath ? [caPath] : undefined,
+    },
+  };
+}
+
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
   process.env.DB_PASSWORD,
   {
-    host: process.env.DB_HOST,
+    host: host,
     port: process.env.DB_PORT,
-    dialectOptions: {
-      ssl: {
-        rejectUnauthorized: false,
-        ca: process.env.DB_SSL_CA || undefined,
-      },
-    },
     dialect: "postgres",
     logging: false,
+    dialectOptions: dialectOptions,
   }
 );
 

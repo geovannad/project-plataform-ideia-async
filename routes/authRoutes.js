@@ -1,9 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const bcrypt = require("bcrypt");
-const conn = require("../db/conn");
-const { DataTypes } = require("sequelize");
-const User = require("../models/User")(conn, DataTypes);
+const { User } = require("../models");
 
 // Tela de login/cadastro
 router.get("/auth", (req, res) => {
