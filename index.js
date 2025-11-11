@@ -18,7 +18,7 @@ const isLoggedIn = require("./middlewares/isLoggedIn");
 const isAuthor = require("./middlewares/isAuthor");
 
 // Importando controllers
-const IdeaController = require("./controller/IdeaController");
+const IdeaController = require("./controller/ideaController");
 const VoteController = require("./controller/VoteController");
 
 const app = express();
