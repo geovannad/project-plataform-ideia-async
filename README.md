@@ -2,6 +2,8 @@
 
 Plataforma colaborativa para o Instituto J&F Tech onde colaboradores podem **compartilhar ideias**, **votar** em propostas e **acompanhar** a inovação da instituição.
 
+Link do projeto na nuvem: [https://project-plataform-ideia-async.onrender.com/](https://project-plataform-ideia-async.onrender.com/)
+
 ## 📋 Índice
 - [Visão Geral](#visão-geral)
 - [Funcionalidades](#funcionalidades)
@@ -442,4 +444,5 @@ ISC
 **Última atualização:** Novembro 2024
 
 **Status:** ✅ MVP Funcional - Pronto para produção
+
 
