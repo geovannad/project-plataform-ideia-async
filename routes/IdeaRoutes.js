@@ -1,6 +1,6 @@
 const express = require("express");
 const router = express.Router();
-const IdeaController = require("../controller/IdeaController");
+const IdeaController = require("../controller/ideaController");
 
 // Manter rotas antigas da API (compatibilidade)
 router.get("/", IdeaController.listIdeas);
