@@ -97,8 +97,9 @@ const sessionConfig = {
   resave: false,
   saveUninitialized: false,
   cookie: {
-    secure: process.env.NODE_ENV === "production",
+    secure: process.env.NODE_ENV === "production" || process.env.RENDER === "true",
     httpOnly: true,
+    sameSite: "lax",
     maxAge: 24 * 60 * 60 * 1000, // 24 horas
   },
 };
@@ -108,8 +109,10 @@ app.use(session(sessionConfig));
 // Flash Messages
 app.use(flash());
 
-// CSRF Protection
-const csrfProtection = csrf({ cookie: false });
+// CSRF Protection - Usar em sessão sem necessidade de sessionKey
+const csrfProtection = csrf({ 
+  cookie: false
+});
 app.use(csrfProtection);
 
 // Servir arquivos estáticos
@@ -395,10 +398,42 @@ app.use((err, req, res, next) => {
 // INICIALIZAÇÃO DO SERVIDOR
 // ===============================
 
+// Middleware para tratamento de erro CSRF
+app.use((err, req, res, next) => {
+  if (err.code === "EBADCSRFTOKEN") {
+    console.warn("⚠️ CSRF token inválido ou ausente:", {
+      method: req.method,
+      path: req.path,
+      csrfToken: req.csrfToken ? "gerado" : "não gerado",
+    });
+    
+    // Regenerar o token e pedir para tentar novamente
+    return res.render("error", {
+      message: "Sessão expirada. Por favor, tente novamente.",
+      layout: "main",
+      csrfToken: req.csrfToken(),
+    });
+  }
+  next(err);
+});
+
+// Middleware de erro geral
+app.use((err, req, res, next) => {
+  console.error("Erro não tratado:", err);
+  res.status(err.status || 500).render("error", {
+    message: err.message || "Erro ao processar sua requisição",
+    layout: "main",
+  });
+});
+
 async function startServer() {
   try {
     // Sincronizar modelos com o banco de dados
-    await db.sequelize.sync({ alter: process.env.NODE_ENV === "development" });
+    // Usar alter: false para evitar problemas com NULL values
+    await db.sequelize.sync({ 
+      alter: false,
+      force: false 
+    });
     console.log("✅ Modelos sincronizados com o banco de dados!");
 
     // Iniciar servidor
