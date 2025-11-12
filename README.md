@@ -240,52 +240,7 @@ project-plataform-ideia-async/
 
 ### Diagrama de Entidade-Relacionamento (ER)
 
-```
-                    ┌─────────────────────┐
-                    │     CATEGORY        │
-                    ├─────────────────────┤
-                    │ id (PK) SERIAL      │
-                    │ name VARCHAR(100)   │
-                    │ created_date DATE   │
-                    └─────────┬───────────┘
-                              │
-                              │ 1:N (referenced by)
-                              │
-┌─────────────────────┐       │       ┌──────────────────────────┐
-│    USER             │       │       │        IDEIA             │
-├─────────────────────┤       │       ├──────────────────────────┤
-│ id (PK) SERIAL      │       └───────┤ id (PK) SERIAL           │
-│ name VARCHAR(100)   │               │ title VARCHAR(200)       │
-│ cpf VARCHAR(12)     │               │ description VARCHAR(500) │
-│ email VARCHAR(100)  │               │ category VARCHAR(50)     │
-│ created_date DATE   │               │ id_category INT (FK) ────┘
-│ password VARCHAR(50)│               │ created_date DATE
-└────────┬────────────┘               │ id_user INT (FK) ────────┐
-         │                            │  [UNIQUE: user+idea]     │
-         │ 1:N                        └──────────────────────────┘
-         │ (author)                           │
-         │                                    │ 1:N
-         │                    ┌───────────────┘
-         │                    │
-         │                    ▼
-         │            ┌──────────────────────────┐
-         │            │      RESPONSE            │
-         │            ├──────────────────────────┤
-         │            │ id (PK) SERIAL           │
-         │            │ id_user INT (FK) ────────┐
-         │            │ id_ideia INT (FK) ───────┤
-         │            │ created_date DATE        │
-         │            │ voted BOOLEAN            │
-         │            │ [UNIQUE: user+ideia]     │
-         │            └──────────────────────────┘
-         │
-         └────→ [Relacionamento "criar ideias"]
-
-Legenda:
-- PK: Primary Key (Chave Primária)
-- FK: Foreign Key (Chave Estrangeira)
-- UNIQUE: Restrição de unicidade
-```
+<img width="904" height="601" alt="image" src="https://github.com/user-attachments/assets/4e823dbc-9152-4b9c-a5d5-f3df1a2aaf07" />
 
 **Tabelas do Banco:**
 1. **Category**: Armazena categorias de ideias
@@ -487,3 +442,4 @@ ISC
 **Última atualização:** Novembro 2024
 
 **Status:** ✅ MVP Funcional - Pronto para produção
+
